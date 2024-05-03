@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import pdfToText from "react-pdftotext";
 import { Tab, Tabs, Paper } from "@mui/material";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 /* eslint-disable react/prop-types */
 
 const WS_URL = "http://localhost:3000";
@@ -108,8 +110,7 @@ function TabPanel(props) {
   );
 }
 
-const SummaryPanel = ({buttonName, content, handleClick}) => {
-
+const SummaryPanel = ({ buttonName, content, handleClick }) => {
   return (
     <div className="flex flex-col items-center bg-gray-800 text-white p-8 rounded-lg h-screen">
       <button
@@ -121,12 +122,11 @@ const SummaryPanel = ({buttonName, content, handleClick}) => {
       </button>
       <div className="mt-4 text-base leading-relaxed overflow-scroll no-scrollbar">
         {/* This is where the summary text will be displayed */}
-        <p>{content}</p>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </div>
     </div>
   );
 };
-
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -139,11 +139,10 @@ function App() {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-
     socket.on("response", (msg) => {
       const res = JSON.parse(msg);
       console.log("received response: ", res);
-      if (res.type === "question"){
+      if (res.type === "question") {
         setMessages((prev) => [
           ...prev,
           {
@@ -151,11 +150,11 @@ function App() {
             message: res.content,
           },
         ]);
-      } else if (res.type === "summary"){
+      } else if (res.type === "summary") {
         setSummary(res.content);
-      } else if (res.type === "qna"){
+      } else if (res.type === "qna") {
         setQna(res.content);
-      } else if (res.type === "revision"){
+      } else if (res.type === "revision") {
         setRevision(res.content);
       }
     });
@@ -200,7 +199,6 @@ function App() {
         };
         reader.readAsText(file);
       }
-
     }
   };
 
@@ -266,34 +264,49 @@ function App() {
                     </Tabs>
                   </Paper>
                   <TabPanel value={tabValue} index={0}>
-                    <ChatRoom messages={messages} setMessages={setMessages}/>
+                    <ChatRoom messages={messages} setMessages={setMessages} />
                   </TabPanel>
                   <TabPanel value={tabValue} index={1}>
-                    <SummaryPanel buttonName={"Generate Summarize"} content={summary} handleClick={()=>{
-                      var obj = {
-                        type: "summary",
-                      };
-                      socket.emit("message", JSON.stringify(obj));
-                      console.log("sent summary request: ", obj);
-                    }}/>
+                    <SummaryPanel
+                      buttonName={"Generate Summarize"}
+                      content={summary}
+                      handleClick={() => {
+                        setSummary("Generating Summary...");
+                        var obj = {
+                          type: "summary",
+                        };
+                        socket.emit("message", JSON.stringify(obj));
+                        console.log("sent summary request: ", obj);
+                      }}
+                    />
                   </TabPanel>
                   <TabPanel value={tabValue} index={2}>
-                    <SummaryPanel buttonName={"Generate QnA"} content={qna} handleClick={()=>{
-                      var obj = {
-                        type: "qna",
-                      };
-                      socket.emit("message", JSON.stringify(obj));
-                      console.log("sent qna request: ", obj);
-                    }}/>
+                    <SummaryPanel
+                      buttonName={"Generate QnA"}
+                      content={qna}
+                      handleClick={() => {
+                        setQna("Generating QnA...");
+                        var obj = {
+                          type: "qna",
+                        };
+                        socket.emit("message", JSON.stringify(obj));
+                        console.log("sent qna request: ", obj);
+                      }}
+                    />
                   </TabPanel>
                   <TabPanel value={tabValue} index={3}>
-                    <SummaryPanel buttonName={"Generate Revision Cards"} content={revision} handleClick={()=>{
-                      var obj = {
-                        type: "revision",
-                      };
-                      socket.emit("message", JSON.stringify(obj));
-                      console.log("sent revision request: ", obj);
-                    }}/>
+                    <SummaryPanel
+                      buttonName={"Generate Revision Cards"}
+                      content={revision}
+                      handleClick={() => {
+                        setRevision("Generating Revision...");
+                        var obj = {
+                          type: "revision",
+                        };
+                        socket.emit("message", JSON.stringify(obj));
+                        console.log("sent revision request: ", obj);
+                      }}
+                    />
                   </TabPanel>
                 </div>
               ) : (
